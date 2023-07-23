@@ -1,5 +1,5 @@
 {
-	"name": "Assignment_3_difficult_question_2_Pipeline",
+	"name": "Assignment_8_difficult_question_2_Pipeline",
 	"properties": {
 		"activities": [
 			{
@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "Assignment_3_Difficult_question_2_DataFlow",
+						"referenceName": "Assignment_8_difficult_question_2_DataFlow",
 						"type": "DataFlowReference"
 					},
 					"compute": {
