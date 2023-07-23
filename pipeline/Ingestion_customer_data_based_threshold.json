@@ -1,0 +1,151 @@
+{
+	"name": "Ingestion_customer_data_based_threshold",
+	"properties": {
+		"activities": [
+			{
+				"name": "Read the threshold of json file",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"wildcardFolderPath": "threshold",
+							"wildcardFileName": "*.json",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ADLS_Generic_JSON_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"filepath": "threshold"
+						}
+					}
+				}
+			},
+			{
+				"name": "count the customer records",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Read the threshold of json file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select count(*)  as count from saleslt.customer",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_Generic_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "saleslt",
+							"TableName": "customer"
+						}
+					}
+				}
+			},
+			{
+				"name": "check count customer records greater than threshold",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "count the customer records",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('count the customer records').output.firstRow.count,activity('Read the threshold of json file').output.firstRow.threshold)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "copy customer data to adls",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "SQL_Generic_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "saleslt",
+										"TableName": "customer"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ADLS_Generic_JSON_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"filepath": "assignment_2_quesstion6"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-07-10T16:31:13Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

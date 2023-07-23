@@ -1,0 +1,132 @@
+{
+	"name": "Ingestion_Product_Addres_To_JSON",
+	"properties": {
+		"activities": [
+			{
+				"name": "Count of Records Product Table",
+				"description": "Count of Records Product Table",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select count(*) product_record_count from saleslt.product",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_Generic_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "saleslt",
+							"TableName": "product"
+						}
+					}
+				}
+			},
+			{
+				"name": "Check the product record count greater 10",
+				"description": "Check the product record count greater 10",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Count of Records Product Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('Count of Records Product Table').output.firstRow.product_record_count,10)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "copy product data to adls",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "SQL_Generic_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "saleslt",
+										"TableName": "product"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ADLS_Generic_JSON_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"filepath": "JSON_IF_ELSE"
+									}
+								}
+							]
+						},
+						{
+							"name": "call the child pipeline",
+							"description": "call the child pipeline",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "copy product data to adls",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "child_Ingestion_Product_Addres_To_JSON",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-07-10T16:31:13Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,184 @@
+{
+	"name": "Assignment_7_question4",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get the last_modified_date from high watermark table",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select last_modified_date from saleslt.high_watermark_tab",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_Generic_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "saleslt",
+							"TableName": "high_watermark_tab"
+						}
+					}
+				}
+			},
+			{
+				"name": "Get the latest modified date from table",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Get the last_modified_date from high watermark table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select max(ModifiedDate)  as ModifiedDate from saleslt.customer_assignment_7",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_Generic_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "saleslt",
+							"TableName": "customer_assignment_7"
+						}
+					}
+				}
+			},
+			{
+				"name": "Taking incremental load",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get the latest modified date from table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "select * from saleslt.customer_assignment_7 where  ModifiedDate >'@{activity('Get the last_modified_date from high watermark table').output.firstRow.last_modified_date}' and   \nModifiedDate <= '@{activity('Get the latest modified date from table').output.firstRow.ModifiedDate}'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "SQL_Generic_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "saleslt",
+							"TableName": "customer_assignment_7"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ADLS_Generic_DS_2",
+						"type": "DatasetReference",
+						"parameters": {
+							"filepath": "incremental_data_folder"
+						}
+					}
+				]
+			},
+			{
+				"name": "Update the high watermark table",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Taking incremental load",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "update saleslt.high_watermark_tab\nset last_modified_date = '@{activity('Get the latest modified date from table').output.firstRow.ModifiedDate}' \nselect 0 as dummy",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_Generic_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "saleslt",
+							"TableName": "customer_assignment_7"
+						}
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-07-11T12:09:02Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

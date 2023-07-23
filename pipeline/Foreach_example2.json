@@ -1,0 +1,147 @@
+{
+	"name": "Foreach_example2",
+	"properties": {
+		"activities": [
+			{
+				"name": "count number of records in cutomer table",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select count(*) as count from saleslt.customer",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_KV_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"db_name": "saleslt",
+							"table_name": "customer"
+						}
+					}
+				}
+			},
+			{
+				"name": "Check count records customer table greater 100",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "count number of records in cutomer table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('count number of records in cutomer table').output.firstRow.count,200)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "copy customer data to customer copy",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Truncate customer_copy data_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SQL_KV_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_name": "saleslt",
+										"table_name": "customer"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "SQL_KV_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_name": "saleslt",
+										"table_name": "customer_copy"
+									}
+								}
+							]
+						},
+						{
+							"name": "Truncate customer_copy data_copy1",
+							"type": "Script",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": "IF (EXISTS (SELECT * \n                 FROM INFORMATION_SCHEMA.TABLES \n                 WHERE TABLE_SCHEMA = 'saleslt' \n                 AND  TABLE_NAME = 'Customer_copy'))\nBEGIN\n    Truncate table saleslt.Customer_copy ;\nEND;\nELSE\nbegin\nSELECT top 0*  INTO saleslt.Customer_copy FROM saleslt.customer\nTruncate table saleslt.Customer_copy ;\nend;\n  \n"
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-07-15T09:15:26Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
