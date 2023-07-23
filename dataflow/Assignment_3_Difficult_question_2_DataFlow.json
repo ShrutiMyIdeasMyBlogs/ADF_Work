@@ -1,0 +1,185 @@
+{
+	"name": "Assignment_3_Difficult_question_2_DataFlow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "ADLS_LS",
+						"type": "LinkedServiceReference"
+					},
+					"name": "TextFile"
+				},
+				{
+					"linkedService": {
+						"referenceName": "SQL_LS_2",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sqlSource"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "SQL_LS_2",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"linkedService": {
+						"referenceName": "SQL_LS_2",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "select1"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "filter1"
+				},
+				{
+					"name": "SelectReleventColumn"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "AlterRow1"
+				},
+				{
+					"name": "join1"
+				},
+				{
+					"name": "filter2"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "select2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          user_id as short,",
+				"          user_name as string,",
+				"          user_mailid as string,",
+				"          user_password_file as string",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'landing',",
+				"     folderPath: 'Assignment_8',",
+				"     fileName: 'Assignment_8_Tough_Question_2.txt',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> TextFile",
+				"source(output(",
+				"          user_id as integer,",
+				"          user_name as string,",
+				"          user_mailid as string,",
+				"          user_password as string,",
+				"          user_password_1 as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'SalesLT',",
+				"     tableName: 'scd_3_user',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> sqlSource",
+				"sqlSource select(mapColumn(",
+				"          db_user_id = user_id,",
+				"          db_user_password = user_password,",
+				"          db_user_password_1 = user_password_1",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"TextFile, select1 lookup(user_id == db_user_id,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 filter(!isNull(db_user_id)) ~> filter1",
+				"derivedColumn1 select(mapColumn(",
+				"          user_id,",
+				"          user_password = db_user_password,",
+				"          user_password_1 = db_user_password_1",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectReleventColumn",
+				"filter1 derive(db_user_password_1 = db_user_password,",
+				"          db_user_password = user_password_file) ~> derivedColumn1",
+				"SelectReleventColumn alterRow(updateIf(1==1)) ~> AlterRow1",
+				"TextFile, SelectReleventColumn join(TextFile@user_id == SelectReleventColumn@user_id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1 filter(isNull(user_password_1)) ~> filter2",
+				"filter2 derive(user_password = user_password_file) ~> derivedColumn2",
+				"derivedColumn2 select(mapColumn(",
+				"          user_name,",
+				"          user_mailid,",
+				"          user_id = TextFile@user_id,",
+				"          user_password,",
+				"          user_password_1",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"AlterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'SalesLT',",
+				"     tableName: 'scd_3_user',",
+				"     insertable: false,",
+				"     updateable: true,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     keys:['user_id'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 1,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          user_id,",
+				"          user_password,",
+				"          user_password_1",
+				"     )) ~> sink1",
+				"select2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'SalesLT',",
+				"     tableName: 'scd_3_user',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 2,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          user_name,",
+				"          user_mailid,",
+				"          user_id,",
+				"          user_password,",
+				"          user_password_1",
+				"     )) ~> sink2"
+			]
+		}
+	}
+}
