@@ -71,6 +71,12 @@
 				},
 				{
 					"name": "assert1"
+				},
+				{
+					"name": "assert2"
+				},
+				{
+					"name": "assert3"
 				}
 			],
 			"scriptLines": [
@@ -145,7 +151,9 @@
 				"     broadcast: 'auto')~> lookup2",
 				"lookup2 filter(isNull(db_user_id)) ~> filter4",
 				"filter4 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert1",
-				"AlterRow1 sink(allowSchemaDrift: true,",
+				"AlterRow1 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert2",
+				"select2 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert3",
+				"assert2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
 				"     store: 'sqlserver',",
@@ -165,7 +173,7 @@
 				"          user_password,",
 				"          user_password_1",
 				"     )) ~> sink1",
-				"select2 sink(allowSchemaDrift: true,",
+				"assert3 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
 				"     store: 'sqlserver',",
