@@ -65,6 +65,9 @@
 				},
 				{
 					"name": "select2"
+				},
+				{
+					"name": "filter3"
 				}
 			],
 			"scriptLines": [
@@ -119,7 +122,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> SelectReleventColumn",
-				"filter1 derive(db_user_password_1 = db_user_password,",
+				"filter3 derive(db_user_password_1 = db_user_password,",
 				"          db_user_password = user_password_file) ~> derivedColumn1",
 				"SelectReleventColumn alterRow(updateIf(1==1)) ~> AlterRow1",
 				"TextFile, SelectReleventColumn join(TextFile@user_id == SelectReleventColumn@user_id,",
@@ -138,6 +141,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select2",
+				"filter1 filter(user_password_file!=db_user_password) ~> filter3",
 				"AlterRow1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
