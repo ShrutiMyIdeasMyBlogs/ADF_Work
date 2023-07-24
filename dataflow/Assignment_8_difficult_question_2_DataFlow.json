@@ -143,7 +143,7 @@
 				"     multiple: false,",
 				"     pickup: 'any',",
 				"     broadcast: 'auto')~> lookup2",
-				"lookup2 filter(user_id!=db_user_id) ~> filter4",
+				"lookup2 filter(isNull(db_user_id)) ~> filter4",
 				"filter4 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert1",
 				"AlterRow1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
