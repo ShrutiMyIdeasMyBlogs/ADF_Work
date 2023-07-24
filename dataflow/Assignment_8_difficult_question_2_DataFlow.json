@@ -25,14 +25,14 @@
 						"referenceName": "SQL_LS_2",
 						"type": "LinkedServiceReference"
 					},
-					"name": "sink1"
+					"name": "UpdateDBTable"
 				},
 				{
 					"linkedService": {
 						"referenceName": "SQL_LS_2",
 						"type": "LinkedServiceReference"
 					},
-					"name": "sink2"
+					"name": "UpdateDBTableSecondTime"
 				}
 			],
 			"transformations": [
@@ -40,43 +40,43 @@
 					"name": "select1"
 				},
 				{
-					"name": "lookup1"
+					"name": "JoinCommonValueOfBothSources"
 				},
 				{
-					"name": "filter1"
+					"name": "FilterRecordsWhereDbUserIDisNotNULL"
 				},
 				{
 					"name": "SelectReleventColumn"
 				},
 				{
-					"name": "derivedColumn1"
+					"name": "AssignValueToBothDBPassword"
 				},
 				{
-					"name": "AlterRow1"
+					"name": "UpdateAllRecord"
 				},
 				{
-					"name": "derivedColumn2"
+					"name": "AssignValueOfFilePasswordToDBUserPassword"
 				},
 				{
-					"name": "select2"
+					"name": "MappingColumns"
 				},
 				{
-					"name": "filter3"
+					"name": "FilterUserPasswordFileNotMatchedDBUserPassword"
 				},
 				{
 					"name": "lookup2"
 				},
 				{
-					"name": "filter4"
+					"name": "DBUserIDnotNULL"
 				},
 				{
-					"name": "assert1"
+					"name": "ExpectTrueIfUserIDNotNULL"
 				},
 				{
-					"name": "assert2"
+					"name": "ReturnTrueWhenUserIDNotNull"
 				},
 				{
-					"name": "assert3"
+					"name": "CheckIfUserIDNotNULL"
 				}
 			],
 			"scriptLines": [
@@ -122,20 +122,20 @@
 				"TextFile, select1 lookup(user_id == db_user_id,",
 				"     multiple: false,",
 				"     pickup: 'any',",
-				"     broadcast: 'auto')~> lookup1",
-				"lookup1 filter(!isNull(db_user_id)) ~> filter1",
-				"derivedColumn1 select(mapColumn(",
+				"     broadcast: 'auto')~> JoinCommonValueOfBothSources",
+				"JoinCommonValueOfBothSources filter(!isNull(db_user_id)) ~> FilterRecordsWhereDbUserIDisNotNULL",
+				"AssignValueToBothDBPassword select(mapColumn(",
 				"          user_id,",
 				"          user_password = db_user_password,",
 				"          user_password_1 = db_user_password_1",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> SelectReleventColumn",
-				"filter3 derive(db_user_password_1 = db_user_password,",
-				"          db_user_password = user_password_file) ~> derivedColumn1",
-				"SelectReleventColumn alterRow(updateIf(1==1)) ~> AlterRow1",
-				"assert1 derive(db_user_password = user_password_file) ~> derivedColumn2",
-				"derivedColumn2 select(mapColumn(",
+				"FilterUserPasswordFileNotMatchedDBUserPassword derive(db_user_password_1 = db_user_password,",
+				"          db_user_password = user_password_file) ~> AssignValueToBothDBPassword",
+				"SelectReleventColumn alterRow(updateIf(1==1)) ~> UpdateAllRecord",
+				"ExpectTrueIfUserIDNotNULL derive(db_user_password = user_password_file) ~> AssignValueOfFilePasswordToDBUserPassword",
+				"AssignValueOfFilePasswordToDBUserPassword select(mapColumn(",
 				"          user_name,",
 				"          user_mailid,",
 				"          user_id,",
@@ -143,17 +143,17 @@
 				"          user_password_1 = db_user_password_1",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select2",
-				"filter1 filter(user_password_file!=db_user_password) ~> filter3",
+				"     skipDuplicateMapOutputs: true) ~> MappingColumns",
+				"FilterRecordsWhereDbUserIDisNotNULL filter(user_password_file!=db_user_password) ~> FilterUserPasswordFileNotMatchedDBUserPassword",
 				"TextFile, select1 lookup(user_id == db_user_id,",
 				"     multiple: false,",
 				"     pickup: 'any',",
 				"     broadcast: 'auto')~> lookup2",
-				"lookup2 filter(isNull(db_user_id)) ~> filter4",
-				"filter4 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert1",
-				"AlterRow1 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert2",
-				"select2 assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> assert3",
-				"assert2 sink(allowSchemaDrift: true,",
+				"lookup2 filter(isNull(db_user_id)) ~> DBUserIDnotNULL",
+				"DBUserIDnotNULL assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> ExpectTrueIfUserIDNotNULL",
+				"UpdateAllRecord assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> ReturnTrueWhenUserIDNotNull",
+				"MappingColumns assert(expectTrue(!isNull(user_id), false, 'assert1')) ~> CheckIfUserIDNotNULL",
+				"ReturnTrueWhenUserIDNotNull sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
 				"     store: 'sqlserver',",
@@ -172,8 +172,8 @@
 				"          user_id,",
 				"          user_password,",
 				"          user_password_1",
-				"     )) ~> sink1",
-				"assert3 sink(allowSchemaDrift: true,",
+				"     )) ~> UpdateDBTable",
+				"CheckIfUserIDNotNULL sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
 				"     store: 'sqlserver',",
@@ -193,7 +193,7 @@
 				"          user_id,",
 				"          user_password,",
 				"          user_password_1",
-				"     )) ~> sink2"
+				"     )) ~> UpdateDBTableSecondTime"
 			]
 		}
 	}
