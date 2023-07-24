@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Assignment_3_difficult_question_2_Pipeline",
+				"name": "Assignment_8_difficult_question_2_Pipeline",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
