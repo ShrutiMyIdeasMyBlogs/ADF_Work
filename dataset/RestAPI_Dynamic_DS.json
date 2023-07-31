@@ -1,0 +1,23 @@
+{
+	"name": "RestAPI_Dynamic_DS",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "RestAPI_Dynamic_LS",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"CountryName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@dataset().CountryName",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	}
+}
