@@ -1,9 +1,9 @@
 {
-	"name": "Assignment10_RestApi",
+	"name": "Assignment10_RestApi_copy1",
 	"properties": {
 		"activities": [
 			{
-				"name": "Copy data from RestAPI to Parquet File",
+				"name": "Copy data1",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -25,12 +25,14 @@
 						}
 					},
 					"sink": {
-						"type": "ParquetSink",
+						"type": "DelimitedTextSink",
 						"storeSettings": {
 							"type": "AzureBlobFSWriteSettings"
 						},
 						"formatSettings": {
-							"type": "ParquetWriteSettings"
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
 						}
 					},
 					"enableStaging": false
@@ -43,7 +45,7 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "parquet",
+						"referenceName": "DelimitedText1",
 						"type": "DatasetReference"
 					}
 				]
