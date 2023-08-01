@@ -1,0 +1,27 @@
+{
+	"name": "runs_2_times_in_day",
+	"properties": {
+		"description": "This trigger runs twice in a day  12:00 AM and 12:00 PM IST",
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 2,
+				"startTime": "2023-08-01T08:35:00",
+				"timeZone": "India Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						0,
+						12
+					]
+				}
+			}
+		}
+	}
+}
