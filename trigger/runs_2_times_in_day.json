@@ -4,7 +4,14 @@
 		"description": "This trigger runs twice in a day  12:00 AM and 12:00 PM IST",
 		"annotations": [],
 		"runtimeState": "Started",
-		"pipelines": [],
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "Assignment10_RestApi_Tricky_3",
+					"type": "PipelineReference"
+				}
+			}
+		],
 		"type": "ScheduleTrigger",
 		"typeProperties": {
 			"recurrence": {
