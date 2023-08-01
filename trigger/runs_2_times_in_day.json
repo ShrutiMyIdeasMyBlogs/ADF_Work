@@ -16,16 +16,16 @@
 		"typeProperties": {
 			"recurrence": {
 				"frequency": "Day",
-				"interval": 2,
+				"interval": 1,
 				"startTime": "2023-08-01T08:35:00",
 				"timeZone": "India Standard Time",
 				"schedule": {
 					"minutes": [
-						45,
-						55
+						0,
+						5
 					],
 					"hours": [
-						15
+						16
 					]
 				}
 			}
