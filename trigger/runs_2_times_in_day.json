@@ -14,11 +14,11 @@
 				"timeZone": "India Standard Time",
 				"schedule": {
 					"minutes": [
-						0
+						45,
+						55
 					],
 					"hours": [
-						0,
-						12
+						14
 					]
 				}
 			}
